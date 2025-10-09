@@ -14,7 +14,7 @@ class Config:
     VARIABLES = ['tasmax', 'pr', 'PETsrad']
     MODELS = ['ACCESS-CM2']
     SSP = ['historical', 'ssp370']
-    DATA_PATH = "C:/Users/mawr/OneDrive - Tonkin + Taylor Group Ltd/Documents/VAE-GAN for Hydrological Simulation/src/VAE-GAN-Hydrological-Simulation/data"
+    DATA_PATH = "C:/Users/.../VAE-GAN-Hydrological-Simulation/data"
     
     # Model parameters
     LATENT_DIM = 64
@@ -103,4 +103,5 @@ def main():
                 raise
 
 if __name__ == '__main__':
+
     main()
