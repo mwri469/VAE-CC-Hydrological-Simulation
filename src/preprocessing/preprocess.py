@@ -14,13 +14,10 @@ from torch.utils.data import Dataset, DataLoader
 class ClimateDataset(Dataset):
     """Dataset for loading and preprocessing NetCDF climate data"""
     
-    def __init__(self, csv_path: str, config, scenario: str = 'historical', load_npy: bool=False):
+    def __init__(self, config, scenario: str = 'historical', load_npy: bool=False):
         self.config = config
         self.scenario = scenario
         
-        # Load file list
-        df = pd.read_csv(csv_path)
-        df = df[df['scenario'] == scenario]
         self.models = config.MODELS
         
         # Load and preprocess data

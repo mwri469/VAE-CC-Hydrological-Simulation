@@ -11,15 +11,16 @@ class Config:
         'lat_min': -39,
         'lat_max': -36
     }
-    VARIABLES = ['tasmax', 'pr', 'PETsrad']
+    VARIABLES = ['pr', 'PETsrad']
     MODELS = ['ACCESS-CM2']
     SSP = ['historical', 'ssp370']
-    DATA_PATH = "C:/Users/.../VAE-GAN-Hydrological-Simulation/data"
+    # DATA_PATH = "C:/Users/.../VAE-GAN-Hydrological-Simulation/data"
+    DATA_PATH = r"C:\Users\mawr\OneDrive - Tonkin + Taylor Group Ltd\Documents\VAE-GAN for Hydrological Simulation\src\VAE-CC-Hydrological-Simulation\data".replace("\\", "/")
     
     # Model parameters
     LATENT_DIM = 64
     HIDDEN_DIM = 128
-    SEQ_LEN = 64  # days per training sequence
+    SEQ_LEN = 32  # days per training sequence
     SPATIAL_SIZE = None  # Will be set from actual data dimensions
     
     # Training parameters
@@ -42,16 +43,14 @@ def main():
     config = Config()
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f"Using device: {device}")
-    
-    climate_data_path = r"C:\Users\mawr\OneDrive - Tonkin + Taylor Group Ltd\Documents\VAE-GAN for Hydrological Simulation\src\VAE-GAN-Hydrological-Simulation\data\climatedata.environment.govt.nz_daily_metadata.csv"
-    
+        
     for scenario in config.SSP:
         print(f"\n{'='*60}")
         print(f"Training on scenario: {scenario}")
         print(f"{'='*60}")
         
         # Load dataset and get actual spatial dimensions
-        dataset = ClimateDataset(climate_data_path, config, scenario)
+        dataset = ClimateDataset(config, scenario, True)
         mask = dataset.mask
         
         # Update config with actual spatial dimensions
