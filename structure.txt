@@ -1,0 +1,55 @@
+PS C:\Users\mawr\OneDrive - Tonkin + Taylor Group Ltd\Documents\VAE-GAN for Hydrological Simulation\src\VAE-GAN-Hydrological-Simulation> tree /F
+Folder PATH listing
+Volume serial number is 6C14-AE57
+C:.
+│   .gitignore
+│   LICENSE
+│   README.md
+│
+├───data
+│   │   climatedata.environment.govt.nz_daily_metadata.csv
+│   │
+│   ├───historical
+│   │   └───ACCESS-CM2
+│   │           ACCESS-CM2model_data.npy
+│   │           PETsrad_historical_ACCESS-CM2_CCAM_daily_NZ5km_bc.nc
+│   │           pr_historical_ACCESS-CM2_CCAM_daily_NZ5km_bc.nc
+│   │           tasmax_historical_ACCESS-CM2_CCAM_daily_NZ5km_bc.nc
+│   │
+│   └───ssp370
+│       └───ACCESS-CM2
+│               PETsrad_ssp370_ACCESS-CM2_CCAM_daily_NZ5km_bc.nc
+│               pr_ssp370_ACCESS-CM2_CCAM_daily_NZ5km_bc.nc
+│               tasmax_ssp370_ACCESS-CM2_CCAM_daily_NZ5km_bc.nc
+│
+└───src
+    │   main.py
+    │   __init__.py
+    │
+    ├───models
+    │   │   LossFunctions.py
+    │   │   Models.py
+    │   │
+    │   └───__pycache__
+    │           LossFunctions.cpython-313.pyc
+    │           Models.cpython-313.pyc
+    │
+    ├───postprocessing
+    │   │   claude_implementation.py
+    │   │   postprocess.py
+    │   │
+    │   └───__pycache__
+    │           postprocess.cpython-313.pyc
+    │
+    ├───preprocessing
+    │   │   DataInvestigations.ipynb
+    │   │   preprocess.py
+    │   │
+    │   └───__pycache__
+    │           preprocess.cpython-313.pyc
+    │
+    └───training
+        │   train.py
+        │
+        └───__pycache__
+                train.cpython-313.pyc
