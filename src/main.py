@@ -6,7 +6,7 @@ from postprocessing.postprocess import *
 class Config:
     # Data parameters
     BBOX = {
-        'lon_min': 174.25,
+        'lon_min': 174,
         'lon_max': 177,
         'lat_min': -39,
         'lat_max': -36
@@ -86,7 +86,7 @@ def main():
                 
                 # Save checkpoint
                 if (epoch + 1) % 10 == 0:
-                    checkpoint_path = f'checkpoint_{scenario}_epoch_{epoch+1}.pt'
+                    checkpoint_path = f'../model_weights/checkpoint_{scenario}_epoch_{epoch+1}.pt'
                     torch.save({
                         'epoch': epoch,
                         'scenario': scenario,
