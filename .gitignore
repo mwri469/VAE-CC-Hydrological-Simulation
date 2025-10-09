@@ -1,1 +1,3 @@
-data/*
+data/historical/*
+data/ssp360/*
+model_weights/*
