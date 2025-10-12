@@ -20,7 +20,7 @@ class Config:
     # Model parameters
     LATENT_DIM = 64
     HIDDEN_DIM = 128
-    SEQ_LEN = 32  # days per training sequence
+    SEQ_LEN = 12  # days per training sequence
     SPATIAL_SIZE = None  # Will be set from actual data dimensions
     
     # Training parameters
@@ -40,10 +40,26 @@ class Config:
     GEN_DAYS = 365 * GEN_YEARS
 
 def main():
+    print(f"\n{'='*60}")
+    print("Variational Auto-encoder for Hydrological Simulation: Training")
+    print(f"{'='*60}")
     config = Config()
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f"Using device: {device}")
-        
+
+    print(f"\n{'='*60}")
+    print("Configuration:")
+    print(f"Bounding box    = {config.BBOX}")
+    print(f"Variables       = {config.VARIABLES}")
+    print(f"Models          = {config.MODELS}")
+    print(f"SSPs            = {config.SSP}")
+    print(f"Temporal length = {config.SEQ_LEN}")
+    print(f"Batch size      = {config.BATCH_SIZE}")
+    print(f"Learning rate   = {config.LEARNING_RATE}")
+    print(f"# of epochs     = {config.N_EPOCHS}")
+    print(f"Beta warmup     = {config.BETA_WARMUP_EPOCHS}")
+    print(f"{'='*60}")
+    
     for scenario in config.SSP:
         print(f"\n{'='*60}")
         print(f"Training on scenario: {scenario}")
@@ -104,3 +120,4 @@ def main():
 if __name__ == '__main__':
 
     main()
+
