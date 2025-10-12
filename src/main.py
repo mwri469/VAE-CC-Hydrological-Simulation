@@ -15,7 +15,7 @@ class Config:
     MODELS = ['ACCESS-CM2']
     SSP = ['historical', 'ssp370']
     # DATA_PATH = "C:/Users/.../VAE-GAN-Hydrological-Simulation/data"
-    DATA_PATH = r"C:\Users\mawr\OneDrive - Tonkin + Taylor Group Ltd\Documents\VAE-GAN for Hydrological Simulation\src\VAE-CC-Hydrological-Simulation\data".replace("\\", "/")
+    DATA_PATH = r"C:\Users\mawr\OneDrive - Tonkin + Taylor Group Ltd\Documents\00 VAE CC Hydrological Simulation\src\VAE-CC-Hydrological-Simulation\data".replace("\\","/")
     
     # Model parameters
     LATENT_DIM = 64
