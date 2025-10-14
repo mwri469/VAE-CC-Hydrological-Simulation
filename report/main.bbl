@@ -1,0 +1,46 @@
+\begin{thebibliography}{1}
+
+\bibitem{tnt}
+Lucy Whitelock-Bell, Sarah Innes, Charlotte Reed, and David Leong.
+\newblock Modelling the impacts of climate change on auckland's metropolitan
+  water supply using ismm technical report, 2022.
+
+\bibitem{Chandel_2024}
+Vikram~Singh Chandel, Udit Bhatia, Auroop~R Ganguly, and Subimal Ghosh.
+\newblock State-of-the-art bias correction of climate models misrepresent
+  climate science and misinform adaptation.
+\newblock {\em Environmental Research Letters}, 19(9):094052, aug 2024.
+
+\bibitem{vae-synthesis}
+Dario A.~B. Oliveira, Jorge~G. Diaz, Bianca Zadrozny, Campbell~D. Watson, and
+  Xiao~Xiang Zhu.
+\newblock Controlling weather field synthesis using variational autoencoders.
+\newblock In {\em IGARSS 2022 - 2022 IEEE International Geoscience and Remote
+  Sensing Symposium}, pages 5027--5030, 2022.
+
+\bibitem{GRU}
+Kyunghyun Cho, Bart van Merri{\"e}nboer, Dzmitry Bahdanau, and Yoshua Bengio.
+\newblock On the properties of neural machine translation: Encoder{--}decoder
+  approaches.
+\newblock In Dekai Wu, Marine Carpuat, Xavier Carreras, and Eva~Maria Vecchi,
+  editors, {\em Proceedings of {SSST}-8, Eighth Workshop on Syntax, Semantics
+  and Structure in Statistical Translation}, pages 103--111, Doha, Qatar,
+  October 2014. Association for Computational Linguistics.
+
+\bibitem{GCM}
+P.~B. Gibson, S.~Stuart, A.~Sood, D.~Stone, N.~Rampal, H.~Lewis, A.~Broadbent,
+  M.~Thatcher, and O.~Morgenstern.
+\newblock Dynamical downscaling cmip6 models over new zealand: added value of
+  climatology and extremes. climate dynamics, 2024.
+
+\bibitem{user-guidance}
+P.~B. Gibson, I.~Campbell, H.~Lewis, N.~Rampal, N.~Fedaeff, and J-M. Woolley.
+\newblock User guidance of cmip6 downscaled data for aotearoa new zealand. niwa
+  report prepared for mfe, 2024.
+
+\bibitem{CCAM}
+J.~L. McGregor and M.~R. Dix.
+\newblock An updated description of the conformal-cubic atmospheric model,
+  2008.
+
+\end{thebibliography}

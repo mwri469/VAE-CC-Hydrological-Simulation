@@ -1,0 +1,160 @@
+%%
+% General report template.
+%
+\documentclass[12pt, a4paper, openany]{report}
+
+% Packages for math, symbols, and formatting
+\usepackage{amsmath, amssymb}
+\usepackage{float} % Improved float handling
+\usepackage{layout} % Show page layout
+\usepackage{parskip} % Paragraph spacing
+\usepackage{comment} % Commenting out large sections
+
+% TikZ for figures
+\usepackage{tikz}
+\usetikzlibrary{calc, positioning, fit, arrows.meta, shapes}
+
+\tikzset{
+  transition/.style={font=\footnotesize, auto, inner sep=0.5ex},
+  state/.style={font=\large, minimum size=1cm, draw, fill=white},
+  statecolor/.style={state, draw=#1!70, fill=#1!30},
+}
+
+% Graphics and figures
+\usepackage{graphicx}
+\usepackage{wrapfig} % Text wrapping around figures
+\usepackage{caption} % Customizing captions
+\usepackage{subcaption} % Subfigures
+\usepackage{rotating} % Rotating figures and tables
+
+% Appendices
+\usepackage[title,titletoc]{appendix}
+
+% Bibliography and references
+\usepackage[square,sort,comma,numbers]{natbib}
+
+% Code listings
+\usepackage{listings}
+\usepackage{xcolor}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2,
+    otherkeywords={points} % Additional keywords
+}
+\lstset{style=mystyle}
+
+% Page layout and geometry
+\usepackage[top=20mm, bottom=20mm, left=20mm, right=30mm]{geometry}
+
+% Typographical adjustments
+\usepackage[expansion=false]{microtype}
+
+% Ensuring figures appear after their first mention
+\usepackage{flafter}
+% Customizing chapter headings
+\usepackage{titlesec}
+\titleformat{\chapter}[display]{\huge\bfseries}{\chaptertitlename~\thechapter}{0.5cm}{\bfseries}
+\titlespacing{\chapter}{0pt}{-1cm}{1cm}
+
+% Header and footer configuration
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot[C]{\thepage} % Page number in the center of the footer
+\renewcommand{\headrulewidth}{0pt} % Remove header line
+\renewcommand{\footrulewidth}{0pt} % Remove footer line
+
+% Line spacing adjustment
+\usepackage{setspace}
+\setstretch{0.9}
+
+% Table handling
+\usepackage{array}
+\floatstyle{plaintop}
+\restylefloat{table}
+
+% Numbering equations by section
+\numberwithin{equation}{section}
+
+% Acronyms
+\usepackage{acronym}
+
+% Font encoding
+\usepackage[T1]{fontenc}
+
+% Improved table of contents and references
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+
+\usepackage{maori}
+
+%%
+% Commands
+%
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+\renewcommand{\bibname}{References}
+% \usepackage{biblatex}
+% \addbibresource{url.bib}
+
+%%
+%	Document Starts Here
+% 	Initial Sections
+%
+\begin{document}
+\input{Title_Page}
+\thispagestyle{empty} % Keep the title page without numbering
+\setcounter{page}{1}
+\pagenumbering{roman}
+
+\newpage
+\section*{Acknowledgements}
+I would like to acknowledge ...
+\section*{Declaration}
+\input{Declaration}
+% Remove \thispagestyle{plain} to keep fancy page numbering
+
+\newpage
+\tableofcontents
+\listoffigures
+\listoftables
+
+%	Main Sections
+%
+\newpage
+\setcounter{page}{1}
+\pagenumbering{arabic}
+
+\input{Introduction}
+
+\newpage
+\input{Method}
+
+\newpage
+\input{Conclusions}
+
+\clearpage
+\addcontentsline{toc}{chapter}{References}
+\bibliographystyle{unsrt}
+\bibliography{references}
+
+\newpage
+\input{Appendix}
+
+\end{document}

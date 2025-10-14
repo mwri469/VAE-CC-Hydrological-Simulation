@@ -1,0 +1,44 @@
+\chapter{Methods}
+
+This study develops a hybrid Variational Autoencoder–Generative Adversarial Network (VAE-GAN) framework for generating synthetic rainfall and potential evapotranspiration (PET) sequences for use in Watercare’s Integrated Source Management Model (ISMM). The framework integrates information from two sources: (i) historical observations and reanalysis datasets, which provide the empirical basis for learning spatial–temporal weather patterns, and (ii) climate projections from downscaled Global Climate Models (GCMs), which provide the climate change signals that must be preserved in the synthetic sequences.
+
+The methodology consists of three stages. First, a VAE is trained using historical fields to learn a structured probabilistic latent space representation of rainfall and PET. Second, GCM-derived perturbations are mapped into the latent space through bias correction and delta-shift methods. Third, a VAE-GAN decoder is employed to generate synthetic weather fields that reflect both the historical climatology and projected climate signals, while the adversarial discriminator improves realism and fidelity, particularly at the extremes.
+
+\section{Data}
+
+
+The downscaled GCM data was provided by the ministry for the environment \cite{GCM} 
+\cite{user-guidance}. From the CMIP 6 ensemble, six models were chosen and dynamically
+downscaled. These mpdels were chosen based on their performance over the historical 
+baseline and assessed using specific, technical performance. Here, Gibson et al.
+\cite{GCM} look at process-based metrics, model independence and spread in equilibrium
+climate sensitivity.
+
+\subsection{Dynamic Downscaling} \label{Section:DynamicDownscaling}
+
+The models were downscaled with the Conformal Cubic Atmospheric Model (CCAM) \cite{CCAM}.
+This method uses a "variable-resolution conformal-cubic grid" to recreate a finer resolution 
+over the region of interest alognside a, relatively, high resolution (12-35km) grid over the
+wider pacific area.
+
+The first three of the chosen six models (ACCESS-CM2, EC-Earth3, NorESM2-MM) used CCAM through
+spectral nudging \cite{user-guidance}; in other words, the regional climate model (RCM) is 
+biased towards the GCM data by only "nudging" the long wavelengths/large-scale features of 
+the RCM's simulated fields to those of the GCM. Here, the RCM is biased towards the atmospheric
+fields, sea surface temperatures and sea ice concentrations of the GCM.
+
+The three other models (AWI-CM-1-1-MR, CNRM-CM6-1, GFDL-ESM4) were simulated using free-
+running atmospheric calculations but with sea surface temperature and sea ice concentrations   
+being provided externall by the larger GCM.
+
+\subsection{Downscaled GCM's}
+
+The `\textit{National climate projections for Aotearoa New Zealand}' project produced
+dynamically downscaled climate projections, as descibed above in subsection \ref{Section:DynamicDownscaling}.
+
+
+\section{Model Architecture}
+
+Oliveira et al. \cite{vae-synthesis} included temporal modelling directly into the VAE model. 
+What we are proposing here, is instead to use GRU to model the temporal dependencies, $p(z_t|
+z_{t-1})$.

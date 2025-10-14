@@ -510,7 +510,7 @@ class GenerationTester:
 # Example usage
 def main():
     # Configuration
-    checkpoint_path = "../model_weights/checkpoint_historical_epoch_100.pt"
+    checkpoint_path = "../model_weights/pt_files/checkpoint_historical_epoch_300.pt"
     
     # Initialize tester
     tester = GenerationTester(checkpoint_path)
