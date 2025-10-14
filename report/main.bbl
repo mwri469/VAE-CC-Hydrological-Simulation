@@ -27,6 +27,17 @@ Kyunghyun Cho, Bart van Merri{\"e}nboer, Dzmitry Bahdanau, and Yoshua Bengio.
   and Structure in Statistical Translation}, pages 103--111, Doha, Qatar,
   October 2014. Association for Computational Linguistics.
 
+\bibitem{vae}
+Diederik~P Kingma and Max Welling.
+\newblock Auto-encoding variational bayes, 2022.
+
+\bibitem{beta-vae}
+Irina Higgins, Lo{\"i}c Matthey, Arka Pal, Christopher~P. Burgess, Xavier
+  Glorot, Matthew~M. Botvinick, Shakir Mohamed, and Alexander Lerchner.
+\newblock beta-vae: Learning basic visual concepts with a constrained
+  variational framework.
+\newblock In {\em International Conference on Learning Representations}, 2016.
+
 \bibitem{GCM}
 P.~B. Gibson, S.~Stuart, A.~Sood, D.~Stone, N.~Rampal, H.~Lewis, A.~Broadbent,
   M.~Thatcher, and O.~Morgenstern.

@@ -272,72 +272,6 @@ class GenerationTester:
         
         plt.show()
     
-    def compare_reconstruction_with_difference(self, originals: np.ndarray, reconstructions: np.ndarray,
-                                              n_display: int = 3, save_path: str = None):
-        """
-        Compare original, reconstructed, and difference maps side-by-side
-        """
-        n_display = min(n_display, len(originals))
-        n_vars = len(self.config.VARIABLES)
-        
-        fig, axes = plt.subplots(n_display, n_vars*3, figsize=(5*n_vars*3, 4*n_display))
-        if n_display == 1:
-            axes = axes.reshape(1, -1)
-        
-        for i in range(n_display):
-            for j, var_name in enumerate(self.config.VARIABLES):
-                # Prepare data with masking
-                data_orig = originals[i, j].copy()
-                data_recon = reconstructions[i, j].copy()
-                data_orig[~self.land_mask] = np.nan
-                data_recon[~self.land_mask] = np.nan
-                
-                # Calculate difference
-                data_diff = data_recon - data_orig
-                
-                # Shared vmin/vmax for orig and recon
-                valid_orig = data_orig[~np.isnan(data_orig)]
-                valid_recon = data_recon[~np.isnan(data_recon)]
-                vmin = min(valid_orig.min(), valid_recon.min())
-                vmax = max(valid_orig.max(), valid_recon.max())
-                
-                # Difference scale (symmetric around 0)
-                valid_diff = data_diff[~np.isnan(data_diff)]
-                diff_abs_max = max(abs(valid_diff.min()), abs(valid_diff.max()))
-                
-                # Original
-                ax_orig = axes[i, j*3]
-                im = ax_orig.imshow(data_orig, cmap='viridis', interpolation='nearest',
-                                   vmin=vmin, vmax=vmax)
-                ax_orig.set_title(f"{var_name} - Original {i+1}")
-                ax_orig.axis('off')
-                plt.colorbar(im, ax=ax_orig, fraction=0.046)
-                
-                # Reconstruction
-                ax_recon = axes[i, j*3+1]
-                im = ax_recon.imshow(data_recon, cmap='viridis', interpolation='nearest',
-                                    vmin=vmin, vmax=vmax)
-                ax_recon.set_title(f"{var_name} - Reconstructed {i+1}")
-                ax_recon.axis('off')
-                plt.colorbar(im, ax=ax_recon, fraction=0.046)
-                
-                # Difference (Recon - Original)
-                ax_diff = axes[i, j*3+2]
-                im = ax_diff.imshow(data_diff, cmap='RdBu_r', interpolation='nearest',
-                                   vmin=-diff_abs_max, vmax=diff_abs_max)
-                ax_diff.set_title(f"{var_name} - Difference {i+1}")
-                ax_diff.axis('off')
-                plt.colorbar(im, ax=ax_diff, fraction=0.046)
-        
-        fig.suptitle("Original | Reconstructed | Difference (Shared Scales)", fontsize=16, y=0.995)
-        plt.tight_layout()
-        
-        if save_path:
-            plt.savefig(save_path, dpi=150, bbox_inches='tight')
-            print(f"Saved comparison to: {save_path}")
-        
-        plt.show()
-    
     def compare_reconstruction(self, originals: np.ndarray, reconstructions: np.ndarray,
                               n_display: int = 3, save_path: str = None):
         """
@@ -524,9 +458,7 @@ def main():
     # Show both comparison types
     tester.compare_reconstruction(originals, reconstructions, 
                                   save_path="reconstruction_comparison.png")
-    tester.compare_reconstruction_with_difference(originals, reconstructions,
-                                                 save_path="reconstruction_with_difference.png")
-    
+
     # Test 2: Unconditional generation
     print("\n" + "="*60)
     print("TEST 2: Unconditional Generation")
