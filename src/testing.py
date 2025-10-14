@@ -457,7 +457,7 @@ def main():
     
     # Show both comparison types
     tester.compare_reconstruction(originals, reconstructions, 
-                                  save_path="reconstruction_comparison.png")
+                                  save_path="./output graphs/reconstruction_comparison.png")
 
     # Test 2: Unconditional generation
     print("\n" + "="*60)
@@ -465,7 +465,7 @@ def main():
     print("="*60)
     generated_normal = tester.generate_unconditional(n_days=365, temperature=1.0)
     tester.visualize_samples(generated_normal[:5], title="Normal Generation (T=1.0)", 
-                            save_path="generated_normal.png")
+                            save_path="./output graphs/generated_normal.png")
     
     # Test 3: Extreme event generation
     print("\n" + "="*60)
@@ -473,7 +473,7 @@ def main():
     print("="*60)
     generated_extreme = tester.generate_from_extremes(n_samples=10, std_threshold=2.5)
     tester.visualize_samples(generated_extreme[:5], title="Extreme Events (2.5σ)", 
-                            save_path="generated_extreme.png")
+                            save_path="./output graphs/generated_extreme.png")
     
     # Test 4: Temporal coherence
     print("\n" + "="*60)
@@ -481,7 +481,7 @@ def main():
     print("="*60)
     sequence = tester.generate_unconditional(n_days=365, temperature=1.0)
     tester.plot_temporal_sequence(sequence, var_idx=1, sample_every=30, 
-                                  save_path="temporal_sequence.png")
+                                  save_path="./output graphs/temporal_sequence.png")
     
     # Test 5: Statistical comparison
     print("\n" + "="*60)
@@ -495,4 +495,5 @@ def main():
 
 
 if __name__ == "__main__":
+
     main()
