@@ -1,29 +1,81 @@
-PS C:\Users\mawr\OneDrive - Tonkin + Taylor Group Ltd\Documents\VAE-GAN for Hydrological Simulation\src\VAE-GAN-Hydrological-Simulation> tree /F
-Folder PATH listing
-Volume serial number is 6C14-AE57
-C:.
+C:\USERS\MAWR\ONEDRIVE - TONKIN + TAYLOR GROUP LTD\DOCUMENTS\00 VAE CC HYDROLOGICAL SIMULATION\SRC\VAE-CC-HYDROLOGICAL-SIMULATION
 │   .gitignore
 │   LICENSE
 │   README.md
+│   structure.txt
 │
 ├───data
 │   │   climatedata.environment.govt.nz_daily_metadata.csv
+│   │   dataset.txt
 │   │
 │   ├───historical
 │   │   └───ACCESS-CM2
-│   │           ACCESS-CM2model_data.npy
-│   │           PETsrad_historical_ACCESS-CM2_CCAM_daily_NZ5km_bc.nc
-│   │           pr_historical_ACCESS-CM2_CCAM_daily_NZ5km_bc.nc
-│   │           tasmax_historical_ACCESS-CM2_CCAM_daily_NZ5km_bc.nc
+│   │           historical_ACCESS-CM2_FilteredGrid.npy
+│   │           historical_ACCESS-CM2_LandMask.npy
 │   │
 │   └───ssp370
 │       └───ACCESS-CM2
-│               PETsrad_ssp370_ACCESS-CM2_CCAM_daily_NZ5km_bc.nc
-│               pr_ssp370_ACCESS-CM2_CCAM_daily_NZ5km_bc.nc
-│               tasmax_ssp370_ACCESS-CM2_CCAM_daily_NZ5km_bc.nc
+│               ssp370_ACCESS-CM2_FilteredGrid.npy
+│               ssp370_ACCESS-CM2_LandMask.npy
+│
+├───model_weights
+│   │   README.md
+│   │
+│   └───pt_files
+│           checkpoint_historical_epoch_10.pt
+│           checkpoint_historical_epoch_100.pt
+│           checkpoint_historical_epoch_20.pt
+│           checkpoint_historical_epoch_200.pt
+│           checkpoint_historical_epoch_30.pt
+│           checkpoint_historical_epoch_300.pt
+│           checkpoint_historical_epoch_40.pt
+│           checkpoint_historical_epoch_50.pt
+│           checkpoint_historical_epoch_60.pt
+│           checkpoint_historical_epoch_70.pt
+│           checkpoint_historical_epoch_80.pt
+│           checkpoint_historical_epoch_90.pt
+│
+├───outputs
+│       Reconstructions_1.png
+│       Reconstructions_2.png
+│       Reconstructions_3.png
+│       Stats.png
+│
+├───report
+│   │   Appendix.tex
+│   │   Conclusions.tex
+│   │   Declaration.tex
+│   │   Introduction.tex
+│   │   main.aux
+│   │   main.bbl
+│   │   main.blg
+│   │   main.fdb_latexmk
+│   │   main.fls
+│   │   main.lof
+│   │   main.log
+│   │   main.lot
+│   │   main.out
+│   │   main.pdf
+│   │   main.synctex.gz
+│   │   main.tex
+│   │   main.toc
+│   │   maori.sty
+│   │   Method.tex
+│   │   references.bib
+│   │   Title_Page.tex
+│   │
+│   └───figures
+│           reconstruction_comparison.png
+│           Stats.png
 │
 └───src
+    │   generated_extreme.png
+    │   generated_normal.png
     │   main.py
+    │   reconstruction_comparison.png
+    │   reconstruction_with_difference.png
+    │   temporal_sequence.png
+    │   testing.py
     │   __init__.py
     │
     ├───models
@@ -48,8 +100,11 @@ C:.
     │   └───__pycache__
     │           preprocess.cpython-313.pyc
     │
-    └───training
-        │   train.py
-        │
-        └───__pycache__
-                train.cpython-313.pyc
+    ├───training
+    │   │   train.py
+    │   │
+    │   └───__pycache__
+    │           train.cpython-313.pyc
+    │
+    └───__pycache__
+            main.cpython-313.pyc
