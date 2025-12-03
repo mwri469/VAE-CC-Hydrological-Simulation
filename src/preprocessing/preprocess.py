@@ -65,7 +65,7 @@ class ClimateDataset(Dataset):
                     # Normalize only over LAND pixels
                     land_values = var_data[:, land_mask]  # (time, n_land_pixels)
                     mean = np.mean(land_values)  # Single value
-                    std = np.std(land_values) + 1e-6
+                    std = np.std(land_values) + 1e-5
                     
                     # Normalize all data
                     var_data = (var_data - mean) / std
