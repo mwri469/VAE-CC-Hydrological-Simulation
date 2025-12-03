@@ -14,13 +14,10 @@ from torch.utils.data import Dataset, DataLoader
 class ClimateDataset(Dataset):
     """Dataset for loading and preprocessing NetCDF climate data"""
     
-    def __init__(self, csv_path: str, config, scenario: str = 'historical', load_npy: bool=False):
+    def __init__(self, config, scenario: str = 'historical', load_npy: bool=False):
         self.config = config
         self.scenario = scenario
         
-        # Load file list
-        df = pd.read_csv(csv_path)
-        df = df[df['scenario'] == scenario]
         self.models = config.MODELS
         
         # Load and preprocess data
@@ -50,8 +47,7 @@ class ClimateDataset(Dataset):
             else:
                 for var in self.config.VARIABLES:                    
                     # Load NetCDF
-                    path = self.config.DATA_PATH + '/' + self.scenario + '/' + model + '/' + \
-                        var + '_' + self.scenario + '_' + model + '_CCAM_daily_NZ5km_bc.nc'
+                    path = self.config.DATA_PATH + '/' + self.scenario + '/' + model + '/' + var + '_' + self.scenario + '_' + model + '_CCAM_daily_NZ5km_bc.nc'
                     ds = xr.open_dataset(path)
                     
                     # Crop to bbox

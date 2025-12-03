@@ -11,25 +11,25 @@ class Config:
         'lat_min': -39,
         'lat_max': -36
     }
-    VARIABLES = ['tasmax', 'pr', 'PETsrad']
-    MODELS = ['ACCESS-CM2']
-    SSP = ['historical', 'ssp370']
-    DATA_PATH = "C:/Users/.../VAE-GAN-Hydrological-Simulation/data"
+    VARIABLES = ['pr']
+    MODELS = ['ACCESS-CM2', 'EC-Earth3', 'NorESM2-MM']
+    SSP = ['historical']
+    DATA_PATH = "C:/Users/ISMMServer\mawr/VAE-GAN-Hydrological-Simulation/data"
     
     # Model parameters
     LATENT_DIM = 64
     HIDDEN_DIM = 128
-    SEQ_LEN = 64  # days per training sequence
+    SEQ_LEN = 24  # days per training sequence
     SPATIAL_SIZE = None  # Will be set from actual data dimensions
     
     # Training parameters
     BATCH_SIZE = 16
     LEARNING_RATE = 1e-4
     WEIGHT_DECAY = 1e-5
-    N_EPOCHS = 100
+    N_EPOCHS = 2000
     BETA_START = 0.0
     BETA_END = 1.0
-    BETA_WARMUP_EPOCHS = 30
+    BETA_WARMUP_EPOCHS = 25
     LAMBDA_ROLLOUT = 0.1
     K_ROLLOUT = 7
     GRAD_CLIP = 1.0
@@ -43,15 +43,13 @@ def main():
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f"Using device: {device}")
     
-    climate_data_path = r"C:\Users\mawr\OneDrive - Tonkin + Taylor Group Ltd\Documents\VAE-GAN for Hydrological Simulation\src\VAE-GAN-Hydrological-Simulation\data\climatedata.environment.govt.nz_daily_metadata.csv"
-    
     for scenario in config.SSP:
         print(f"\n{'='*60}")
         print(f"Training on scenario: {scenario}")
         print(f"{'='*60}")
         
         # Load dataset and get actual spatial dimensions
-        dataset = ClimateDataset(climate_data_path, config, scenario)
+        dataset = ClimateDataset(config, scenario, load_npy=True)
         mask = dataset.mask
         
         # Update config with actual spatial dimensions
@@ -62,16 +60,14 @@ def main():
         
         # Initialize model with correct dimensions
         model = ClimateVAE(config, input_height=dataset.height, input_width=dataset.width).to(device)
-        optimizer = torch.optim.AdamW(model.parameters(), lr=config.LEARNING_RATE,
-                                    weight_decay=config.WEIGHT_DECAY)
+        optimizer = torch.optim.AdamW(model.parameters(), lr=config.LEARNING_RATE, weight_decay=config.WEIGHT_DECAY)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=5)
 
         # Training
         for epoch in range(config.N_EPOCHS):
             # Beta annealing
             if epoch < config.BETA_WARMUP_EPOCHS:
-                beta = config.BETA_START + (config.BETA_END - config.BETA_START) * \
-                    epoch / config.BETA_WARMUP_EPOCHS
+                beta = config.BETA_START + (config.BETA_END - config.BETA_START) * epoch / config.BETA_WARMUP_EPOCHS
             else:
                 beta = config.BETA_END
             
