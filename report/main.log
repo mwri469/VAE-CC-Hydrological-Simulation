@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (MiKTeX 24.1) (preloaded format=pdflatex 2025.10.10)  15 OCT 2025 11:17
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (MiKTeX 24.1) (preloaded format=pdflatex 2025.10.10)  16 OCT 2025 14:45
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -811,41 +811,31 @@ Package microtype Info: No adjustment of character kerning.
 File: mt-cmr.cfg 2013/05/19 v2.2 microtype config. file: Computer Modern Roman (RS)
 )
 Package hyperref Info: Link coloring ON on input line 120.
- (main.out) (main.out)
 \@outlinefile=\write5
 \openout5 = `main.out'.
 
  (Title_Page.tex [1
 
-{C:/Users/mawr/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map}]) (Declaration.tex) [1] (main.toc
-LaTeX Font Info:    Trying to load font information for U+msa on input line 3.
- (C:\Users\mawr\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsa.fd
-File: umsa.fd 2013/01/14 v3.01 AMS symbols A
-) (C:\Users\mawr\AppData\Local\Programs\MiKTeX\tex/latex/microtype\mt-msa.cfg
-File: mt-msa.cfg 2006/02/04 v1.1 microtype config. file: AMS symbols (a) (RS)
-)
-LaTeX Font Info:    Trying to load font information for U+msb on input line 3.
- (C:\Users\mawr\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsb.fd
-File: umsb.fd 2013/01/14 v3.01 AMS symbols B
-) (C:\Users\mawr\AppData\Local\Programs\MiKTeX\tex/latex/microtype\mt-msb.cfg
-File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
-))
+{C:/Users/mawr/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map}]) (Declaration.tex) [1]
+No file main.toc.
 \tf@toc=\write6
 \openout6 = `main.toc'.
 
- [2
+[2
 
-] (main.lof)
+]
+No file main.lof.
 \tf@lof=\write7
 \openout7 = `main.lof'.
 
- [3
+[3
 
-] (main.lot)
+]
+No file main.lot.
 \tf@lot=\write8
 \openout8 = `main.lot'.
 
- [4
+[4
 
 ] (Introduction.tex
 Chapter 1.
@@ -858,38 +848,108 @@ l.55 \chapter
 
 ] [2]
 Chapter 2.
+Runaway argument?
+{
+Introduction.tex:58: Paragraph ended before \ttl@straight@i was complete.
+<to be read again> 
+                   \par 
+l.58 
+     
+I suspect you've forgotten a `}', causing me to apply this
+control sequence to too much text. How can we recover?
+My plan is to forget the whole thing and hope for the best.
 
-Overfull \hbox (6.62656pt too wide) in paragraph at lines 66--77
+Introduction.tex:58: Too many }'s.
+\@xdblarg #1#2->#1[{#2}
+                       ]{#2}
+l.58 
+     
+You've closed more groups than you opened.
+Such booboos are generally harmless, so keep going.
+
+
+Overfull \hbox (6.62656pt too wide) in paragraph at lines 68--79
 []\T1/cmr/m/n/12 The In-te-grated Source Man-age-ment Model (ISMM) is Wa-ter-care's pri-mary decision-support
  []
 
 [3
 
-] [4]
+]
+
+Package natbib Warning: Citation `tnt' on page 4 undefined on input line 106.
+
+
+Package natbib Warning: Citation `Chandel_2024' on page 4 undefined on input line 135.
+
+[4]
 Chapter 3.
 
-Overfull \hbox (6.92778pt too wide) in paragraph at lines 165--173
-[]\T1/cmr/m/n/12 Dynamical down-scal-ing ad-dresses this lim-i-ta-tion by nest-ing re-gional cli-mate mod-els (RCMs)
- []
+Package natbib Warning: Citation `vae-synthesis' on page 5 undefined on input line 171.
+
+
+Package natbib Warning: Citation `GRU' on page 5 undefined on input line 203.
 
 [5
 
-] [6] [7] [8]
+]
+LaTeX Font Info:    Trying to load font information for U+msa on input line 208.
+ (C:\Users\mawr\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsa.fd
+File: umsa.fd 2013/01/14 v3.01 AMS symbols A
+) (C:\Users\mawr\AppData\Local\Programs\MiKTeX\tex/latex/microtype\mt-msa.cfg
+File: mt-msa.cfg 2006/02/04 v1.1 microtype config. file: AMS symbols (a) (RS)
+)
+LaTeX Font Info:    Trying to load font information for U+msb on input line 208.
+ (C:\Users\mawr\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsb.fd
+File: umsb.fd 2013/01/14 v3.01 AMS symbols B
+) (C:\Users\mawr\AppData\Local\Programs\MiKTeX\tex/latex/microtype\mt-msb.cfg
+File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
+)
+
+Package natbib Warning: Citation `vae' on page 6 undefined on input line 258.
+
+
+Package natbib Warning: Citation `beta-vae' on page 6 undefined on input line 265.
+
+[6] [7]
 Chapter 4.
-) [9
+) [8
 
 ] (Method.tex
 Chapter 5.
-) [10
 
-] [11] (Conclusions.tex
+Package natbib Warning: Citation `GCM' on page 9 undefined on input line 10.
+
+
+Package natbib Warning: Citation `user-guidance' on page 9 undefined on input line 11.
+
+
+Package natbib Warning: Citation `GCM' on page 9 undefined on input line 14.
+
+
+Package natbib Warning: Citation `CCAM' on page 9 undefined on input line 19.
+
+
+Package natbib Warning: Citation `user-guidance' on page 9 undefined on input line 25.
+
+
+LaTeX Warning: Reference `Section:DynamicDownscaling' on page 9 undefined on input line 37.
+
+
+Package natbib Warning: Citation `vae-synthesis' on page 9 undefined on input line 42.
+
+) [9
+
+] [10] (Conclusions.tex
 Chapter 6.
-<figures/Stats.png, id=241, 867.24pt x 289.08pt>
+
+LaTeX Warning: Reference `fig:statistics' on page 11 undefined on input line 6.
+
+<figures/Stats.png, id=101, 867.24pt x 289.08pt>
 File: figures/Stats.png Graphic file (type png)
 <use figures/Stats.png>
 Package pdftex.def Info: figures/Stats.png  used on input line 10.
 (pdftex.def)             Requested size: 433.61894pt x 144.53964pt.
-<figures/reconstruction_comparison.png, id=243, 1155.3564pt x 851.3406pt>
+<figures/reconstruction_comparison.png, id=103, 1155.3564pt x 851.3406pt>
 File: figures/reconstruction_comparison.png Graphic file (type png)
 <use figures/reconstruction_comparison.png>
 Package pdftex.def Info: figures/reconstruction_comparison.png  used on input line 22.
@@ -897,43 +957,58 @@ Package pdftex.def Info: figures/reconstruction_comparison.png  used on input li
 
 LaTeX Warning: `!h' float specifier changed to `!ht'.
 
-[12
+[11
 
- <./figures/Stats.png>] [13 <./figures/reconstruction_comparison.png>]
+ <./figures/Stats.png>] [12 <./figures/reconstruction_comparison.png>]
 Chapter 7.
-[14
+[13
 
 ]
 Chapter 8.
-) [15
+) [14
 
-] (main.bbl) [16
-
-
-] (Appendix.tex
+] (main.bbl) (Appendix.tex
 Chapter 9.
-) [17
+)
+
+Package natbib Warning: There were undefined citations.
+
+[15
+
 
 ] (main.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-04>
  ***********
-Package rerunfilecheck Info: File `main.out' has not changed.
-(rerunfilecheck)             Checksum: B9C6373E94BEDE308FAAB0D73750C1E6;3623.
+
+
+LaTeX Warning: There were undefined references.
+
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
+
+Package rerunfilecheck Warning: File `main.out' has changed.
+(rerunfilecheck)                Rerun to get outlines right
+(rerunfilecheck)                or use package `bookmark'.
+
+Package rerunfilecheck Info: Checksums for `main.out':
+(rerunfilecheck)             Before: <no file>
+(rerunfilecheck)             After:  8AA8BE9A106AB3C11023607E68C991C0;3122.
  ) 
 Here is how much of TeX's memory you used:
- 30146 strings out of 474486
- 572997 string characters out of 5744226
- 1938542 words of memory out of 5000000
- 51847 multiletter control sequences out of 15000+600000
+ 30064 strings out of 474486
+ 571208 string characters out of 5744226
+ 1937542 words of memory out of 5000000
+ 51789 multiletter control sequences out of 15000+600000
  569572 words of font info for 63 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 102i,12n,107p,1332b,527s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 102i,11n,107p,1332b,527s stack positions out of 10000i,1000n,20000p,200000b,200000s
  <C:\Users\mawr\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecbx1440.pk> <C:\Users\mawr\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecbx1200.pk> <C:\Users\mawr\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecbx1728.pk> <C:\Users\mawr\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm1200.pk> <C:\Users\mawr\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecti1200.pk> <C:\Users\mawr\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecbx2488.pk> <C:\Users\mawr\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm1440.pk><C:/Users/mawr/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi12.pfb><C:/Users/mawr/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi8.pfb><C:/Users/mawr/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr12.pfb><C:/Users/mawr/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Users/mawr/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/mawr/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy8.pfb>
-Output written on main.pdf (22 pages, 469485 bytes).
+Output written on main.pdf (20 pages, 426021 bytes).
 PDF statistics:
- 654 PDF objects out of 1000 (max. 8388607)
- 62 named destinations out of 1000 (max. 500000)
- 6367 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 465 PDF objects out of 1000 (max. 8388607)
+ 48 named destinations out of 1000 (max. 500000)
+ 6167 words of extra memory for PDF output out of 10000 (max. 10000000)
 

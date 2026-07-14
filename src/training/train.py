@@ -1,5 +1,5 @@
 from models.Models import ClimateVAE
-from models.LossFunctions import compute_loss
+from models.LossFunctions import compute_loss, masked_l1_loss
 from torch.utils.data import Dataset, DataLoader
 from typing import Tuple, Dict, List
 import torch
@@ -32,3 +32,34 @@ def train_epoch(model: ClimateVAE, loader: DataLoader, optimizer: torch.optim.Op
         losses[k] /= len(loader)
     
     return losses
+
+
+def train_epoch_vq(model, loader, optimizer, config, device, mask):
+    """Train one epoch of VQ-VAE-2"""
+    model.train()
+    losses = {'total': 0, 'recon': 0, 'vq': 0, 'perp_top': 0, 'perp_bottom': 0}
+    mask = mask.to(device)
+
+    for x_seq, _ in tqdm(loader):
+        x_seq = x_seq.to(device)
+        B, T = x_seq.shape[:2]
+        x = x_seq.reshape(B * T, *x_seq.shape[2:])
+
+        optimizer.zero_grad()
+        out = model(x)
+
+        recon_loss = masked_l1_loss(x, out['recon'], mask)
+        total = recon_loss + out['vq_loss']
+
+        total.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), config.GRAD_CLIP)
+        optimizer.step()
+
+        losses['total'] += total.item()
+        losses['recon'] += recon_loss.item()
+        losses['vq'] += out['vq_loss'].item()
+        losses['perp_top'] += out['perplexity_top'].item()
+        losses['perp_bottom'] += out['perplexity_bottom'].item()
+
+    n = len(loader)
+    return {k: v / n for k, v in losses.items()}

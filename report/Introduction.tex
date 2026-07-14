@@ -54,6 +54,8 @@ system reliability yet remain poorly represented in traditional synthetic weathe
 
 \chapter{Background}
 
+\section
+
 \section{Auckland's Water Supply System and ISMM}
 
 Auckland's metropolitan water supply serves over 1.7 million people across New Zealand's 
@@ -121,15 +123,17 @@ demand even as precipitation patterns shift.
 
 Bias correction has become standard practice in climate impact modelling, with quantile 
 mapping (QM) and its variants widely adopted across sectors. These methods align GCM output 
-distributions with observed distributions by constructing transfer functions that map modelled 
-quantiles to observed quantiles. When applied to future projections, the method assumes that 
+distributions with observed distributions by mapping quantiles from the modelled data, to 
+quantiles 
+in the observed data. When applied to future projections, the method assumes that 
 the biases present in historical simulations persist into the future, allowing the same 
 transfer functions to correct future data. This assumption of bias stationarity is convenient 
 but physically questionable, as the sources of GCM biases, such as insufficient resolution of 
 orographic precipitation or imperfect representation of convective processes may change as 
 the climate state changes.
 
-Chandel et al.~\cite{Chandel_2024} demonstrated that aggressive bias 
+Recent papers such as Chandel et al. \cite{Chandel_2024} challenge this approach.
+They demonstrated that aggressive bias 
 correction can distort or suppress the climate change signals that GCMs are designed to project. 
 Their analysis showed that quantile-mapped GCM fields can become statistically 
 indistinguishable from quantile-mapped random fields, suggesting that the correction process 
@@ -150,87 +154,6 @@ relationships and change signals while reducing systematic biases.
 
 \chapter{Literature Review}
 
-\section{Climate Model Downscaling and Bias Correction}
-
-Global Climate Models simulate Earth's climate system by solving fundamental equations 
-governing atmospheric dynamics, radiative transfer, and energy balance on discretized grids. 
-The computational cost of these simulations constrains spatial resolution, with most CMIP6 
-models operating at 100--200\,km grid spacing. At these resolutions, regional climate features 
-influenced by topography, land-sea contrasts, and mesoscale circulation patterns cannot be 
-resolved. New Zealand's complex topography, with mountain ranges that generate substantial 
-orographic precipitation enhancement, exemplifies the challenge: a single GCM grid cell may 
-encompass coastal lowlands, mountain peaks, and lee-side rain shadows that experience vastly 
-different local climates.
-
-Dynamical downscaling addresses this limitation by nesting regional climate models (RCMs) 
-within GCM simulations. The RCM uses the GCM output as boundary conditions but solves 
-atmospheric equations at much finer resolution, typically 5--50\,km grid spacing. This allows 
-explicit representation of topographic effects and regional circulation features. For New 
-Zealand, NIWA has developed a suite of dynamically downscaled projections using the Conformal 
-Cubic Atmospheric Model (CCAM) at 5\,km resolution, driven by selected CMIP6 GCMs. These 
-projections provide daily precipitation, temperature, and radiation fields suitable for 
-hydrological applications.
-
-However, dynamical downscaling does not eliminate model biases. RCMs inherit boundary condition 
-biases from driving GCMs and introduce their own biases through imperfect parameterisations of 
-sub-grid processes. Consequently, bias correction is typically applied before using downscaled 
-projections in impact models. Quantile mapping has emerged as the dominant approach, 
-constructing transfer functions that align modelled quantiles with observed quantiles from a 
-reference dataset. The method adjusts not just the mean but the entire distribution, improving 
-representation of variability and extremes.
-
-Despite its widespread adoption, quantile mapping faces theoretical and practical challenges. 
-The assumption of bias stationarity---that biases present in the historical period persist 
-unchanged into the future---lacks physical justification. Climate change may alter the nature 
-and magnitude of model biases as the climate state evolves. More fundamentally, Chandel et 
-al.~\cite{Chandel_2024} demonstrated that quantile mapping can suppress or distort the climate 
-change signals in GCM projections. Their analysis compared quantile-mapped GCM outputs with 
-quantile-mapped random fields and found minimal statistical distinction, suggesting the 
-correction process forces future projections to resemble observations so closely that 
-physically meaningful climate changes are obscured.
-
-This finding challenges a foundational assumption in climate impact modelling: that 
-bias-corrected GCM projections provide reliable information about future climate changes. If 
-the correction process distorts change signals, then impact assessments based on corrected data 
-may misrepresent future risks. The implications are particularly concerning for extreme events, 
-where the magnitude of projected changes often exceeds the magnitude of historical biases, 
-making the separation of bias from signal especially difficult.
-
-\section{Stochastic Weather Generators}
-
-Stochastic weather generators produce synthetic weather sequences by modelling the statistical 
-properties of observed data. Early generators focused on precipitation occurrence and amount, 
-using Markov chains to represent wet/dry day sequences and parametric distributions for 
-rainfall amounts on wet days. More sophisticated generators incorporate multiple variables with 
-inter-variable correlations, spatial dependence across sites, and consistency with observed 
-statistical properties across multiple timescales.
-
-The Stochastic Climate Library used in previous Watercare assessments represents an advanced 
-implementation that preserves spatial correlation across sites through careful calibration of 
-multivariate distributions. The generator conditions on specified marginal distributions and 
-correlation structures, allowing for the production of synthetic sequences that match desired 
-statistical properties while extending beyond the length of observed records. This capability 
-is essential for water resources applications requiring multi-century sequences to estimate 
-low-probability supply failures.
-
-However, weather generators face an inherent limitation: they reproduce the statistical 
-envelope of their conditioning data but do not extrapolate beyond it. The generator resamples 
-and recombines patterns present in observations, maintaining statistical consistency but not 
-exploring genuinely novel conditions. For climate change applications, this means the generator 
-can produce sequences matching perturbed statistics derived from climate projections, but it 
-cannot generate extreme events substantially beyond those used for calibration. The range of 
-generated variability is bounded by the calibration dataset.
-
-Recent developments in weather generator methodology have explored various approaches to 
-address this limitation. Some methods explicitly model extreme value distributions separately 
-from bulk distributions, using generalised extreme value or generalised Pareto distributions 
-for tail behaviour. Others incorporate non-stationary models where distribution parameters vary 
-over time according to climate indices or trends. Multi-site generators that preserve spatial 
-correlation patterns provide improved representation of regional-scale events. Despite these 
-advances, the fundamental challenge remains: extrapolating beyond observed variability requires 
-assumptions about how statistical properties change, and these assumptions introduce 
-uncertainty.
-
 \section{Machine Learning for Weather and Climate}
 
 The application of machine learning to weather and climate problems has expanded rapidly, 
@@ -245,7 +168,7 @@ distributions and generating samples from high-dimensional data. VAEs explicitly
 distributions through a probabilistic encoder-decoder structure, providing both training 
 stability and a structured latent space that enables controlled generation. The regularization 
 of latent space to a known distribution creates natural mechanisms for sampling and 
-interpolation. Oliveira et al.~\cite{vae-synthesis} demonstrated VAE application to 
+interpolation. Oliveira et al. \cite{vae-synthesis} demonstrated VAE application to 
 precipitation field generation, showing that latent space sampling could control scenario 
 extremity. Their approach trained a VAE on monsoon precipitation data, then generated extreme 
 scenarios by sampling from the distribution tails. 

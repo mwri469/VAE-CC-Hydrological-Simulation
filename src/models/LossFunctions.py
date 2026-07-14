@@ -92,3 +92,12 @@ def compute_loss(model: ClimateVAE, x_seq: torch.Tensor, c_seq: torch.Tensor,
         'kl': kl_loss,
         'rollout': rollout_loss
     }
+
+
+def masked_l1_loss(x_true: torch.Tensor, x_recon: torch.Tensor,
+                   mask: torch.Tensor) -> torch.Tensor:
+    """L1 loss over land pixels only"""
+    B, C = x_true.shape[:2]
+    mask_expanded = mask.unsqueeze(1).expand(B, C, -1, -1)
+    loss = torch.abs(x_true - x_recon) * mask_expanded
+    return loss.sum() / (mask_expanded.sum() + 1e-8)

@@ -12,15 +12,15 @@ class Config:
         'lat_min': -39,
         'lat_max': -36
     }
-    VARIABLES = ['tasmax', 'pr', 'PETsrad']
-    MODELS = ['ACCESS-CM2']
-    SSP = ['historical', 'ssp370']
-    DATA_PATH = "C:/Users/mawr/OneDrive - Tonkin + Taylor Group Ltd/Documents/VAE-GAN for Hydrological Simulation/src/VAE-GAN-Hydrological-Simulation/data"
+    VARIABLES = ['pr']
+    MODELS = ['ACCESS-CM2', 'EC-Earth3', 'NorESM2-MM']
+    SSP = ['historical']
+    DATA_PATH = r"C:\Users\mawr\OneDrive - Tonkin + Taylor Group Ltd\Documents\00 VAE CC Hydrological Simulation\src\VAE-CC-Hydrological-Simulation\data".replace("\\", "/")
     
     # Model parameters
     LATENT_DIM = 64
     HIDDEN_DIM = 128
-    SEQ_LEN = 64  # days per training sequence
+    SEQ_LEN = 12  # days per training sequence
     SPATIAL_SIZE = None  # Will be set from actual data dimensions
     
     # Training parameters
@@ -38,6 +38,15 @@ class Config:
     # Generation parameters
     GEN_YEARS = 1000
     GEN_DAYS = 365 * GEN_YEARS
+
+    # VQ-VAE-2 parameters
+    VQ_EMBED_DIM = 64
+    VQ_HIDDEN_DIM = 128
+    VQ_NUM_EMBEDDINGS = 512
+    VQ_COMMITMENT_COST = 0.25
+    VQ_DECAY = 0.99
+    VQ_N_EPOCHS = 500
+    VQ_LEARNING_RATE = 3e-4
 
 def load_checkpoint(checkpoint_path, device='cpu'):
     """
@@ -77,8 +86,7 @@ def load_checkpoint(checkpoint_path, device='cpu'):
     print(f"  - Will resume from epoch: {start_epoch}")
     
     # Load dataset to get dimensions
-    climate_data_path = r"C:\Users\mawr\OneDrive - Tonkin + Taylor Group Ltd\Documents\VAE-GAN for Hydrological Simulation\src\VAE-GAN-Hydrological-Simulation\data\climatedata.environment.govt.nz_daily_metadata.csv"
-    dataset = ClimateDataset(climate_data_path, config, scenario)
+    dataset = ClimateDataset(config, scenario, load_npy=True)
     
     # Initialize model with correct dimensions
     model = ClimateVAE(
@@ -107,6 +115,49 @@ def load_checkpoint(checkpoint_path, device='cpu'):
     
     return model, optimizer, config, start_epoch, scenario, dataset
 
+
+def load_vq_checkpoint(checkpoint_path, device='cpu'):
+    """Load a VQ-VAE-2 checkpoint"""
+    print(f"Loading VQ-VAE-2 checkpoint from: {checkpoint_path}")
+    checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
+
+    config_data = checkpoint['config']
+    if isinstance(config_data, dict):
+        config = Config()
+        for key, value in config_data.items():
+            setattr(config, key, value)
+    else:
+        config = config_data
+
+    scenario = checkpoint['scenario']
+    start_epoch = checkpoint['epoch'] + 1
+
+    print(f"Checkpoint info:")
+    print(f"  - Scenario: {scenario}")
+    print(f"  - Completed epoch: {checkpoint['epoch']}")
+    print(f"  - Will resume from epoch: {start_epoch}")
+
+    dataset = ClimateDataset(config, scenario, load_npy=True)
+
+    model = VQVAE2(
+        config,
+        input_height=dataset.height,
+        input_width=dataset.width
+    ).to(device)
+    model.load_state_dict(checkpoint['model'])
+    print("Model weights loaded successfully!")
+
+    optimizer = torch.optim.AdamW(
+        model.parameters(),
+        lr=config.VQ_LEARNING_RATE
+    )
+    if 'optimizer' in checkpoint:
+        optimizer.load_state_dict(checkpoint['optimizer'])
+        print("Optimizer state loaded successfully!")
+
+    return model, optimizer, config, start_epoch, scenario, dataset
+
+
 def main():
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Train Climate VAE')
@@ -114,89 +165,139 @@ def main():
                        help='Path to checkpoint to resume from (e.g., checkpoint_historical_epoch_100.pt)')
     parser.add_argument('--scenario', type=str, default=None,
                        help='Scenario to train (overrides config if not resuming)')
+    parser.add_argument('--model', type=str, default='vae', choices=['vae', 'vqvae2'],
+                       help='Model architecture to use')
     args = parser.parse_args()
     
     config = Config()
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f"Using device: {device}")
-    
-    climate_data_path = r"C:\Users\mawr\OneDrive - Tonkin + Taylor Group Ltd\Documents\VAE-GAN for Hydrological Simulation\src\VAE-GAN-Hydrological-Simulation\data\climatedata.environment.govt.nz_daily_metadata.csv"
-    
+        
     # Determine scenarios to train
     if args.resume:
-        # Load from checkpoint
-        model, optimizer, config, start_epoch, scenario, dataset = load_checkpoint(args.resume, device)
+        if args.model == 'vqvae2':
+            model, optimizer, config, start_epoch, scenario, dataset = load_vq_checkpoint(args.resume, device)
+        else:
+            model, optimizer, config, start_epoch, scenario, dataset = load_checkpoint(args.resume, device)
         scenarios_to_train = [scenario]
         print(f"\nResuming training from epoch {start_epoch}")
     else:
-        # Start fresh training
         scenarios_to_train = [args.scenario] if args.scenario else config.SSP
         start_epoch = 0
         model = None
         optimizer = None
         dataset = None
-    
+
+    if args.model == 'vqvae2':
+        _train_vqvae2(config, device, scenarios_to_train, start_epoch, model, optimizer, dataset, args)
+    else:
+        _train_vae(config, device, scenarios_to_train, start_epoch, model, optimizer, dataset, args)
+
+
+def _train_vae(config, device, scenarios_to_train, start_epoch, model, optimizer, dataset, args):
     for scenario in scenarios_to_train:
         print(f"\n{'='*60}")
-        print(f"Training on scenario: {scenario}")
+        print(f"Training VAE on scenario: {scenario}")
         print(f"{'='*60}")
-        
-        # If not resuming, initialize everything fresh
+
         if not args.resume or dataset is None:
-            # Load dataset and get actual spatial dimensions
-            dataset = ClimateDataset(climate_data_path, config, scenario)
-            
-            # Update config with actual spatial dimensions
+            dataset = ClimateDataset(config, scenario, load_npy=True)
             config.SPATIAL_SIZE = max(dataset.height, dataset.width)
-            print(f"Set SPATIAL_SIZE to: {config.SPATIAL_SIZE}")
-            
-            # Initialize model with correct dimensions
             model = ClimateVAE(config, input_height=dataset.height, input_width=dataset.width).to(device)
             optimizer = torch.optim.AdamW(model.parameters(), lr=config.LEARNING_RATE,
                                         weight_decay=config.WEIGHT_DECAY)
             start_epoch = 0
-        
+
         loader = DataLoader(dataset, batch_size=config.BATCH_SIZE, shuffle=True, num_workers=0)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=5)
 
-        # Training loop
         for epoch in range(start_epoch, config.N_EPOCHS):
-            # Beta annealing
             if epoch < config.BETA_WARMUP_EPOCHS:
                 beta = config.BETA_START + (config.BETA_END - config.BETA_START) * \
                     epoch / config.BETA_WARMUP_EPOCHS
             else:
                 beta = config.BETA_END
-            
-            # Train
+
             try:
-                losses = train_epoch(model, loader, optimizer, beta, config, device)
+                losses = train_epoch(model, loader, optimizer, beta, config, device, dataset.mask)
                 scheduler.step(losses['total'])
-                
+
                 print(f"Epoch {epoch+1}/{config.N_EPOCHS} | Beta: {beta:.3f} | "
                     f"Loss: {losses['total']:.4f} | Recon: {losses['recon']:.4f} | "
                     f"KL: {losses['kl']:.4f} | Rollout: {losses['rollout']:.4f}")
-                
-                # Save checkpoint
+
                 if (epoch + 1) % 10 == 0:
                     checkpoint_path = f'checkpoint_{scenario}_epoch_{epoch+1}.pt'
                     torch.save({
                         'epoch': epoch,
                         'scenario': scenario,
+                        'model_type': 'vae',
                         'model': model.state_dict(),
                         'optimizer': optimizer.state_dict(),
                         'config': config,
                         'losses': losses,
                     }, checkpoint_path)
                     print(f"Saved checkpoint: {checkpoint_path}")
-                    
+
             except RuntimeError as e:
                 print(f"\nError during training: {e}")
                 print(f"Dataset spatial dimensions: {dataset.height} x {dataset.width}")
                 print(f"Config SPATIAL_SIZE: {config.SPATIAL_SIZE}")
                 raise
-        
-        # Reset for next scenario (if training multiple)
+
+        if len(scenarios_to_train) > 1:
+            model = None
+            optimizer = None
+            dataset = None
+            start_epoch = 0
+
+
+def _train_vqvae2(config, device, scenarios_to_train, start_epoch, model, optimizer, dataset, args):
+    for scenario in scenarios_to_train:
+        print(f"\n{'='*60}")
+        print(f"Training VQ-VAE-2 on scenario: {scenario}")
+        print(f"{'='*60}")
+
+        if not args.resume or dataset is None:
+            dataset = ClimateDataset(config, scenario, load_npy=True)
+            config.SPATIAL_SIZE = max(dataset.height, dataset.width)
+            model = VQVAE2(config, input_height=dataset.height, input_width=dataset.width).to(device)
+            optimizer = torch.optim.AdamW(model.parameters(), lr=config.VQ_LEARNING_RATE)
+            start_epoch = 0
+
+        loader = DataLoader(dataset, batch_size=config.BATCH_SIZE, shuffle=True, num_workers=0)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=10)
+
+        for epoch in range(start_epoch, config.VQ_N_EPOCHS):
+            losses = train_epoch_vq(model, loader, optimizer, config, device, dataset.mask)
+            scheduler.step(losses['total'])
+
+            print(f"Epoch {epoch+1}/{config.VQ_N_EPOCHS} | "
+                  f"Loss: {losses['total']:.4f} | Recon: {losses['recon']:.4f} | "
+                  f"VQ: {losses['vq']:.4f} | Perp_T: {losses['perp_top']:.1f} | "
+                  f"Perp_B: {losses['perp_bottom']:.1f}")
+
+            # Dead code replacement every 50 epochs
+            if (epoch + 1) % 50 == 0:
+                x_sample, _ = next(iter(loader))
+                x_sample = x_sample.to(device).reshape(-1, *x_sample.shape[2:])
+                n_dead_t, n_dead_b = model.replace_dead_codes(x_sample)
+                if n_dead_t + n_dead_b > 0:
+                    print(f"  Replaced {n_dead_t} dead top codes, {n_dead_b} dead bottom codes")
+
+            if (epoch + 1) % 10 == 0:
+                checkpoint_path = f'checkpoint_vqvae2_{scenario}_epoch_{epoch+1}.pt'
+                torch.save({
+                    'epoch': epoch,
+                    'scenario': scenario,
+                    'model_type': 'vqvae2',
+                    'model': model.state_dict(),
+                    'optimizer': optimizer.state_dict(),
+                    'config': config,
+                    'losses': losses,
+                }, checkpoint_path)
+                print(f"Saved checkpoint: {checkpoint_path}")
+
         if len(scenarios_to_train) > 1:
             model = None
             optimizer = None

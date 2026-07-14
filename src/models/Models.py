@@ -280,3 +280,226 @@ class ClimateVAE(nn.Module):
             'logvar_prior': torch.stack(logvar_prior, 1),
             'recons': recons
         }
+
+
+# ── VQ-VAE-2 Components ────────────────────────────────────────────────────
+
+class ResBlock(nn.Module):
+    def __init__(self, channels):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.ReLU(),
+            nn.Conv2d(channels, channels, 3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(channels, channels, 3, padding=1),
+        )
+
+    def forward(self, x):
+        return x + self.net(x)
+
+
+class VectorQuantizerEMA(nn.Module):
+    def __init__(self, num_embeddings, embedding_dim, commitment_cost, decay=0.99):
+        super().__init__()
+        self.num_embeddings = num_embeddings
+        self.embedding_dim = embedding_dim
+        self.commitment_cost = commitment_cost
+        self.decay = decay
+
+        self.embedding = nn.Embedding(num_embeddings, embedding_dim)
+        self.embedding.weight.data.uniform_(-1 / num_embeddings, 1 / num_embeddings)
+
+        self.register_buffer('ema_cluster_size', torch.zeros(num_embeddings))
+        self.register_buffer('ema_embed_sum', self.embedding.weight.data.clone())
+
+    def forward(self, z: torch.Tensor):
+        # z: (B, D, H, W)
+        B, D, H, W = z.shape
+        z_flat = z.permute(0, 2, 3, 1).reshape(-1, D)
+
+        dist = (z_flat.pow(2).sum(1, keepdim=True)
+                + self.embedding.weight.pow(2).sum(1)
+                - 2 * z_flat @ self.embedding.weight.t())
+
+        indices = dist.argmin(dim=1)
+        quantized = self.embedding(indices).view(B, H, W, D).permute(0, 3, 1, 2)
+
+        if self.training:
+            encodings = F.one_hot(indices, self.num_embeddings).float()
+            self.ema_cluster_size.mul_(self.decay).add_(
+                encodings.sum(0), alpha=1 - self.decay)
+            embed_sum = encodings.t() @ z_flat
+            self.ema_embed_sum.mul_(self.decay).add_(
+                embed_sum, alpha=1 - self.decay)
+
+            n = self.ema_cluster_size.sum()
+            cluster_size = ((self.ema_cluster_size + 1e-5)
+                            / (n + self.num_embeddings * 1e-5) * n)
+            self.embedding.weight.data.copy_(
+                self.ema_embed_sum / cluster_size.unsqueeze(1))
+
+        commitment_loss = self.commitment_cost * F.mse_loss(
+            z_flat, quantized.permute(0, 2, 3, 1).reshape(-1, D).detach())
+
+        # Straight-through estimator
+        quantized_st = z + (quantized - z).detach()
+
+        avg_probs = F.one_hot(indices, self.num_embeddings).float().mean(0)
+        perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
+
+        return quantized_st, commitment_loss, perplexity, indices.view(B, H, W)
+
+    def replace_dead_codes(self, z_flat: torch.Tensor) -> int:
+        dead = self.ema_cluster_size < 1.0
+        n_dead = dead.sum().item()
+        if n_dead > 0 and z_flat.shape[0] > 0:
+            replace_idx = torch.randint(0, z_flat.shape[0], (int(n_dead),),
+                                        device=z_flat.device)
+            self.embedding.weight.data[dead] = z_flat[replace_idx].detach()
+            self.ema_embed_sum[dead] = z_flat[replace_idx].detach()
+            self.ema_cluster_size[dead] = 1.0
+        return int(n_dead)
+
+
+class VQVAE2(nn.Module):
+    def __init__(self, config, input_height, input_width):
+        super().__init__()
+        self.config = config
+        self.input_height = input_height
+        self.input_width = input_width
+
+        C = len(config.VARIABLES)
+        D = config.VQ_EMBED_DIM
+        H = config.VQ_HIDDEN_DIM
+        K = config.VQ_NUM_EMBEDDINGS
+        beta = config.VQ_COMMITMENT_COST
+        decay = config.VQ_DECAY
+
+        # Bottom encoder: input → /4 features
+        self.enc_bottom = nn.Sequential(
+            nn.Conv2d(C, H // 2, 3, stride=2, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(H // 2, H, 3, stride=2, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(H, H, 3, padding=1),
+            ResBlock(H),
+            ResBlock(H),
+            nn.Conv2d(H, D, 1),
+        )
+
+        # Top encoder: /4 features → /8 features
+        self.enc_top = nn.Sequential(
+            nn.Conv2d(D, H, 3, stride=2, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(H, H, 3, padding=1),
+            ResBlock(H),
+            ResBlock(H),
+            nn.Conv2d(H, D, 1),
+        )
+
+        self.vq_top = VectorQuantizerEMA(K, D, beta, decay)
+        self.vq_bottom = VectorQuantizerEMA(K, D, beta, decay)
+
+        # Upsample quantized top → bottom resolution
+        self.dec_top = nn.Sequential(
+            nn.Conv2d(D, H, 3, padding=1),
+            ResBlock(H),
+            nn.Upsample(scale_factor=2, mode='nearest'),
+            nn.Conv2d(H, D, 3, padding=1),
+        )
+
+        # Combine bottom encoder output with decoded top for bottom quantization
+        self.enc_bottom_combine = nn.Conv2d(D * 2, D, 1)
+
+        # Full decoder: bottom + top → output
+        self.decoder = nn.Sequential(
+            nn.Conv2d(D * 2, H, 3, padding=1),
+            ResBlock(H),
+            ResBlock(H),
+            nn.Upsample(scale_factor=2, mode='nearest'),
+            nn.Conv2d(H, H, 3, padding=1),
+            nn.ReLU(),
+            nn.Upsample(scale_factor=2, mode='nearest'),
+            nn.Conv2d(H, C, 3, padding=1),
+        )
+
+        # Compute internal spatial dims
+        with torch.no_grad():
+            test = torch.zeros(1, C, input_height, input_width)
+            eb = self.enc_bottom(test)
+            et = self.enc_top(eb)
+            self.bottom_h, self.bottom_w = eb.shape[2], eb.shape[3]
+            self.top_h, self.top_w = et.shape[2], et.shape[3]
+            print(f"VQVAE2: input={input_height}x{input_width}, "
+                  f"bottom={self.bottom_h}x{self.bottom_w}, "
+                  f"top={self.top_h}x{self.top_w}")
+
+    def encode(self, x: torch.Tensor):
+        enc_b = self.enc_bottom(x)
+        enc_t = self.enc_top(enc_b)
+        return enc_b, enc_t
+
+    def decode(self, quant_b: torch.Tensor, quant_t: torch.Tensor):
+        dec_t = self.dec_top(quant_t)
+        if dec_t.shape[2:] != quant_b.shape[2:]:
+            dec_t = F.interpolate(dec_t, size=quant_b.shape[2:], mode='nearest')
+
+        x_recon = self.decoder(torch.cat([quant_b, dec_t], dim=1))
+        if x_recon.shape[2:] != (self.input_height, self.input_width):
+            x_recon = F.interpolate(x_recon, size=(self.input_height, self.input_width),
+                                    mode='bilinear', align_corners=False)
+        return x_recon
+
+    def decode_from_ids(self, ids_b: torch.Tensor, ids_t: torch.Tensor):
+        quant_t = self.vq_top.embedding(ids_t).permute(0, 3, 1, 2)
+        quant_b = self.vq_bottom.embedding(ids_b).permute(0, 3, 1, 2)
+        return self.decode(quant_b, quant_t)
+
+    def replace_dead_codes(self, x: torch.Tensor):
+        with torch.no_grad():
+            enc_b, enc_t = self.encode(x)
+            D = self.config.VQ_EMBED_DIM
+
+            n_dead_t = self.vq_top.replace_dead_codes(
+                enc_t.permute(0, 2, 3, 1).reshape(-1, D))
+
+            quant_t, _, _, _ = self.vq_top(enc_t)
+            dec_t = self.dec_top(quant_t)
+            if dec_t.shape[2:] != enc_b.shape[2:]:
+                dec_t = F.interpolate(dec_t, size=enc_b.shape[2:], mode='nearest')
+            enc_b_combined = self.enc_bottom_combine(torch.cat([enc_b, dec_t], dim=1))
+
+            n_dead_b = self.vq_bottom.replace_dead_codes(
+                enc_b_combined.permute(0, 2, 3, 1).reshape(-1, D))
+
+        return n_dead_t, n_dead_b
+
+    def forward(self, x: torch.Tensor) -> Dict:
+        enc_b, enc_t = self.encode(x)
+
+        # Top level quantization
+        quant_t, loss_t, perp_t, ids_t = self.vq_top(enc_t)
+
+        # Upsample top codes to bottom resolution
+        dec_t = self.dec_top(quant_t)
+        if dec_t.shape[2:] != enc_b.shape[2:]:
+            dec_t = F.interpolate(dec_t, size=enc_b.shape[2:], mode='nearest')
+
+        # Bottom level quantization (conditioned on top)
+        enc_b_combined = self.enc_bottom_combine(torch.cat([enc_b, dec_t], dim=1))
+        quant_b, loss_b, perp_b, ids_b = self.vq_bottom(enc_b_combined)
+
+        # Full decode
+        x_recon = self.decoder(torch.cat([quant_b, dec_t], dim=1))
+        if x_recon.shape[2:] != x.shape[2:]:
+            x_recon = F.interpolate(x_recon, size=x.shape[2:],
+                                    mode='bilinear', align_corners=False)
+
+        return {
+            'recon': x_recon,
+            'vq_loss': loss_t + loss_b,
+            'perplexity_top': perp_t,
+            'perplexity_bottom': perp_b,
+            'ids_top': ids_t,
+            'ids_bottom': ids_b,
+        }
