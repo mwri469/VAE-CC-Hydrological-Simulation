@@ -317,26 +317,32 @@ class VectorQuantizerEMA(nn.Module):
         B, D, H, W = z.shape
         z_flat = z.permute(0, 2, 3, 1).reshape(-1, D)
 
-        dist = (z_flat.pow(2).sum(1, keepdim=True)
-                + self.embedding.weight.pow(2).sum(1)
-                - 2 * z_flat @ self.embedding.weight.t())
+        # Nearest-code lookup is non-differentiable; keep it (and the EMA
+        # bookkeeping below) out of the autograd graph so no reference to the
+        # encoder's activations is retained past this call.
+        with torch.no_grad():
+            z_flat_detached = z_flat.detach()
+            dist = (z_flat_detached.pow(2).sum(1, keepdim=True)
+                    + self.embedding.weight.pow(2).sum(1)
+                    - 2 * z_flat_detached @ self.embedding.weight.t())
 
-        indices = dist.argmin(dim=1)
+            indices = dist.argmin(dim=1)
+
+            if self.training:
+                encodings = F.one_hot(indices, self.num_embeddings).float()
+                self.ema_cluster_size.mul_(self.decay).add_(
+                    encodings.sum(0), alpha=1 - self.decay)
+                embed_sum = encodings.t() @ z_flat_detached
+                self.ema_embed_sum.mul_(self.decay).add_(
+                    embed_sum, alpha=1 - self.decay)
+
+                n = self.ema_cluster_size.sum()
+                cluster_size = ((self.ema_cluster_size + 1e-5)
+                                / (n + self.num_embeddings * 1e-5) * n)
+                self.embedding.weight.data.copy_(
+                    self.ema_embed_sum / cluster_size.unsqueeze(1))
+
         quantized = self.embedding(indices).view(B, H, W, D).permute(0, 3, 1, 2)
-
-        if self.training:
-            encodings = F.one_hot(indices, self.num_embeddings).float()
-            self.ema_cluster_size.mul_(self.decay).add_(
-                encodings.sum(0), alpha=1 - self.decay)
-            embed_sum = encodings.t() @ z_flat
-            self.ema_embed_sum.mul_(self.decay).add_(
-                embed_sum, alpha=1 - self.decay)
-
-            n = self.ema_cluster_size.sum()
-            cluster_size = ((self.ema_cluster_size + 1e-5)
-                            / (n + self.num_embeddings * 1e-5) * n)
-            self.embedding.weight.data.copy_(
-                self.ema_embed_sum / cluster_size.unsqueeze(1))
 
         commitment_loss = self.commitment_cost * F.mse_loss(
             z_flat, quantized.permute(0, 2, 3, 1).reshape(-1, D).detach())
@@ -348,6 +354,7 @@ class VectorQuantizerEMA(nn.Module):
         perplexity = torch.exp(-torch.sum(avg_probs * torch.log(avg_probs + 1e-10)))
 
         return quantized_st, commitment_loss, perplexity, indices.view(B, H, W)
+
 
     def replace_dead_codes(self, z_flat: torch.Tensor) -> int:
         dead = self.ema_cluster_size < 1.0

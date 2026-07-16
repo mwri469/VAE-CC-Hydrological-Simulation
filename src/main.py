@@ -1,7 +1,3 @@
-import os
-# Reduce CUDA allocator fragmentation on small/constrained GPUs; must be set before torch initializes CUDA
-os.environ.setdefault('PYTORCH_CUDA_ALLOC_CONF', 'expandable_segments:True')
-
 from models.Models import *
 from training.train import *
 from preprocessing.preprocess import *
@@ -16,11 +12,11 @@ class Config:
         'lat_min': -39,
         'lat_max': -36
     }
-    VARIABLES = ['pr']
-    MODELS = ['ACCESS-CM2', 'EC-Earth3', 'NorESM2-MM']
+    VARIABLES = ['pr', 'tasmin', 'tasmax']
+    MODELS = ['ACCESS-CM2', 'AWI-CM-1-1-MR', 'CNRM-CM6-1', 'EC-Earth3', 'GFDL-ESM4', 'NorESM2-MM', 'NZESM']
     SSP = ['historical']
-    DATA_PATH = r"C:\Users\mawr\OneDrive - Tonkin + Taylor Group Ltd\Documents\00 VAE CC Hydrological Simulation\src\VAE-CC-Hydrological-Simulation\data".replace("\\", "/")
-    
+    DATA_PATH = r"C:\Users\ISMMServer\mawr\VAE-CC-Hydrological-Simulation\data".replace("\\", "/")
+
     # Model parameters
     LATENT_DIM = 64
     HIDDEN_DIM = 128
