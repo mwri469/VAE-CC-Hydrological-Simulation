@@ -1,3 +1,7 @@
+import os
+# Reduce CUDA allocator fragmentation on small/constrained GPUs; must be set before torch initializes CUDA
+os.environ.setdefault('PYTORCH_CUDA_ALLOC_CONF', 'expandable_segments:True')
+
 from models.Models import *
 from training.train import *
 from preprocessing.preprocess import *
@@ -210,6 +214,7 @@ def _train_vae(config, device, scenarios_to_train, start_epoch, model, optimizer
 
         loader = DataLoader(dataset, batch_size=config.BATCH_SIZE, shuffle=True, num_workers=0)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=5)
+        scaler = torch.amp.GradScaler('cuda', enabled=(device == 'cuda'))
 
         for epoch in range(start_epoch, config.N_EPOCHS):
             if epoch < config.BETA_WARMUP_EPOCHS:
@@ -219,7 +224,7 @@ def _train_vae(config, device, scenarios_to_train, start_epoch, model, optimizer
                 beta = config.BETA_END
 
             try:
-                losses = train_epoch(model, loader, optimizer, beta, config, device, dataset.mask)
+                losses = train_epoch(model, loader, optimizer, beta, config, device, dataset.mask, scaler)
                 scheduler.step(losses['total'])
 
                 print(f"Epoch {epoch+1}/{config.N_EPOCHS} | Beta: {beta:.3f} | "
@@ -250,6 +255,8 @@ def _train_vae(config, device, scenarios_to_train, start_epoch, model, optimizer
             optimizer = None
             dataset = None
             start_epoch = 0
+            if device == 'cuda':
+                torch.cuda.empty_cache()
 
 
 def _train_vqvae2(config, device, scenarios_to_train, start_epoch, model, optimizer, dataset, args):
@@ -267,9 +274,10 @@ def _train_vqvae2(config, device, scenarios_to_train, start_epoch, model, optimi
 
         loader = DataLoader(dataset, batch_size=config.BATCH_SIZE, shuffle=True, num_workers=0)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=10)
+        scaler = torch.amp.GradScaler('cuda', enabled=(device == 'cuda'))
 
         for epoch in range(start_epoch, config.VQ_N_EPOCHS):
-            losses = train_epoch_vq(model, loader, optimizer, config, device, dataset.mask)
+            losses = train_epoch_vq(model, loader, optimizer, config, device, dataset.mask, scaler)
             scheduler.step(losses['total'])
 
             print(f"Epoch {epoch+1}/{config.VQ_N_EPOCHS} | "
@@ -303,6 +311,8 @@ def _train_vqvae2(config, device, scenarios_to_train, start_epoch, model, optimi
             optimizer = None
             dataset = None
             start_epoch = 0
+            if device == 'cuda':
+                torch.cuda.empty_cache()
 
 if __name__ == '__main__':
     main()
