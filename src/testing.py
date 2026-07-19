@@ -5,10 +5,13 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
-from models.Models import ClimateVAE
+from models.Models import ClimateVAE, VQVAE2
 from main import Config
 from preprocessing.preprocess import ClimateDataset
 import seaborn as sns
+
+OUTPUT_DIR = Path(__file__).parent / "output graphs"
+OUTPUT_DIR.mkdir(exist_ok=True)
 
 class GenerationTester:
     def __init__(self, checkpoint_path: str):
@@ -35,8 +38,9 @@ class GenerationTester:
         
         self.epoch = checkpoint['epoch']
         self.scenario = checkpoint['scenario']
+        self.model_type = checkpoint.get('model_type', 'vae')
         
-        print(f"Loaded checkpoint from epoch {self.epoch}, scenario: {self.scenario}")
+        print(f"Loaded checkpoint from epoch {self.epoch}, scenario: {self.scenario}, model_type: {self.model_type}")
         
         # Setup device
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -45,12 +49,19 @@ class GenerationTester:
         # Load dataset to get normalization stats and mask
         self.dataset = ClimateDataset(self.config, self.scenario, load_npy=True)
         
-        # Initialize model with correct dimensions
-        self.model = ClimateVAE(
-            self.config, 
-            input_height=self.dataset.height, 
-            input_width=self.dataset.width
-        ).to(self.device)
+        # Initialize model with correct dimensions and architecture
+        if self.model_type == 'vqvae2':
+            self.model = VQVAE2(
+                self.config,
+                input_height=self.dataset.height,
+                input_width=self.dataset.width
+            ).to(self.device)
+        else:
+            self.model = ClimateVAE(
+                self.config, 
+                input_height=self.dataset.height, 
+                input_width=self.dataset.width
+            ).to(self.device)
         
         # Load weights
         self.model.load_state_dict(checkpoint['model'])
@@ -72,6 +83,12 @@ class GenerationTester:
         Returns:
             generated: (n_days, n_vars, H, W) numpy array
         """
+        if self.model_type == 'vqvae2':
+            raise NotImplementedError(
+                "VQVAE2 has no continuous latent prior or temporal transition model, "
+                "so unconditional generation is not supported for this checkpoint."
+            )
+        
         print(f"\nGenerating {n_days} days unconditionally (temperature={temperature})...")
         
         # Create conditioning (synthetic year)
@@ -121,6 +138,12 @@ class GenerationTester:
         Returns:
             samples: (n_samples, n_vars, H, W) numpy array
         """
+        if self.model_type == 'vqvae2':
+            raise NotImplementedError(
+                "VQVAE2 has no continuous latent prior, so tail-sampling extreme "
+                "event generation is not supported for this checkpoint."
+            )
+        
         print(f"\nGenerating {n_samples} extreme samples (threshold={std_threshold} std)...")
         
         samples = []
@@ -169,14 +192,20 @@ class GenerationTester:
             # Get real sample
             x_seq, c_seq = self.dataset[start_idx + i]
             x = x_seq[0:1].to(self.device)  # Take first day of sequence
-            c = c_seq[0:1].to(self.device)
             
-            # Encode
-            mu, logvar = self.model.encoder(x, c)
-            z = self.model.reparameterize(mu, logvar)
-            
-            # Decode
-            x_recon, _ = self.model.decoder(z, c)
+            if self.model_type == 'vqvae2':
+                # VQVAE2 has no conditioning or continuous latent sampling
+                out = self.model(x)
+                x_recon = out['recon']
+            else:
+                c = c_seq[0:1].to(self.device)
+                
+                # Encode
+                mu, logvar = self.model.encoder(x, c)
+                z = self.model.reparameterize(mu, logvar)
+                
+                # Decode
+                x_recon, _ = self.model.decoder(z, c)
             
             originals.append(x.cpu().numpy())
             reconstructions.append(x_recon.cpu().numpy())
@@ -444,7 +473,7 @@ class GenerationTester:
 # Example usage
 def main():
     # Configuration
-    checkpoint_path = "../model_weights/pt_files/checkpoint_historical_epoch_900.pt"
+    checkpoint_path = r"C:\Users\mawr\OneDrive - Tonkin + Taylor Group Ltd\Documents\00 VAE CC Hydrological Simulation\src\VAE-CC-Hydrological-Simulation\model_weights\pt_files\checkpoint_vqvae2_historical_epoch_20.pt"
     
     # Initialize tester
     tester = GenerationTester(checkpoint_path)
@@ -457,7 +486,25 @@ def main():
     
     # Show both comparison types
     tester.compare_reconstruction(originals, reconstructions, 
-                                  save_path="./output graphs/reconstruction_comparison.png")
+                                  save_path=str(OUTPUT_DIR / "reconstruction_comparison.png"))
+
+    if tester.model_type == 'vqvae2':
+        # VQVAE2 has no continuous latent prior or temporal transition model,
+        # so unconditional/extreme generation and temporal rollout are not supported.
+        print("\n" + "="*60)
+        print("Checkpoint is a VQVAE2 model: skipping unconditional/extreme "
+              "generation and temporal coherence tests (not supported for this architecture).")
+        print("="*60)
+        
+        print("\n" + "="*60)
+        print("TEST 2: Statistical Analysis (Reconstruction)")
+        print("="*60)
+        tester.analyze_statistics(reconstructions, var_idx=1)
+        
+        print("\n" + "="*60)
+        print("Testing complete!")
+        print("="*60)
+        return
 
     # Test 2: Unconditional generation
     print("\n" + "="*60)
@@ -465,7 +512,7 @@ def main():
     print("="*60)
     generated_normal = tester.generate_unconditional(n_days=365, temperature=1.0)
     tester.visualize_samples(generated_normal[:5], title="Normal Generation (T=1.0)", 
-                            save_path="./output graphs/generated_normal.png")
+                            save_path=str(OUTPUT_DIR / "generated_normal.png"))
     
     # Test 3: Extreme event generation
     print("\n" + "="*60)
@@ -473,7 +520,7 @@ def main():
     print("="*60)
     generated_extreme = tester.generate_from_extremes(n_samples=10, std_threshold=2.5)
     tester.visualize_samples(generated_extreme[:5], title="Extreme Events (2.5σ)", 
-                            save_path="./output graphs/generated_extreme.png")
+                            save_path=str(OUTPUT_DIR / "generated_extreme.png"))
     
     # Test 4: Temporal coherence
     print("\n" + "="*60)
@@ -481,7 +528,7 @@ def main():
     print("="*60)
     sequence = tester.generate_unconditional(n_days=365, temperature=1.0)
     tester.plot_temporal_sequence(sequence, var_idx=1, sample_every=30, 
-                                  save_path="./output graphs/temporal_sequence.png")
+                                  save_path=str(OUTPUT_DIR / "temporal_sequence.png"))
     
     # Test 5: Statistical comparison
     print("\n" + "="*60)

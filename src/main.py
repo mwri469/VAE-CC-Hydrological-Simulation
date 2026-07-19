@@ -40,9 +40,9 @@ class Config:
     GEN_DAYS = 365 * GEN_YEARS
 
     # VQ-VAE-2 parameters
-    VQ_EMBED_DIM = 64
-    VQ_HIDDEN_DIM = 128
-    VQ_NUM_EMBEDDINGS = 512
+    VQ_EMBED_DIM = 256
+    VQ_HIDDEN_DIM = 512
+    VQ_NUM_EMBEDDINGS = 2048
     VQ_COMMITMENT_COST = 0.25
     VQ_DECAY = 0.99
     VQ_N_EPOCHS = 500
