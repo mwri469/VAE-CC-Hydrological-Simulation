@@ -47,6 +47,15 @@ class Config:
     VQ_DECAY = 0.99
     VQ_N_EPOCHS = 500
     VQ_LEARNING_RATE = 3e-4
+    # Max images processed in a single forward/backward pass. The DataLoader
+    # yields (B, T, ...) sequences that get flattened to B*T images before
+    # hitting the model; with the wider VQ_HIDDEN_DIM/VQ_EMBED_DIM above, a
+    # full B*T batch through one conv2d can exceed the Windows driver's TDR
+    # timeout and crash with "CUDA error: the launch timed out and was
+    # terminated". Gradient accumulation splits each batch into chunks of
+    # this size so kernels stay fast while the effective batch/model size
+    # is unchanged.
+    VQ_MICRO_BATCH_SIZE = 32
 
 def load_checkpoint(checkpoint_path, device='cpu'):
     """
@@ -285,6 +294,9 @@ def _train_vqvae2(config, device, scenarios_to_train, start_epoch, model, optimi
             if (epoch + 1) % 50 == 0:
                 x_sample, _ = next(iter(loader))
                 x_sample = x_sample.to(device).reshape(-1, *x_sample.shape[2:])
+                # Slice to a micro-batch to avoid a single oversized kernel
+                # launch (see train_epoch_vq for why this matters).
+                x_sample = x_sample[:config.VQ_MICRO_BATCH_SIZE]
                 n_dead_t, n_dead_b = model.replace_dead_codes(x_sample)
                 if n_dead_t + n_dead_b > 0:
                     print(f"  Replaced {n_dead_t} dead top codes, {n_dead_b} dead bottom codes")
