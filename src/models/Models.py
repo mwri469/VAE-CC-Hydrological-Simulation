@@ -312,27 +312,35 @@ class VectorQuantizerEMA(nn.Module):
         self.register_buffer('ema_cluster_size', torch.zeros(num_embeddings))
         self.register_buffer('ema_embed_sum', self.embedding.weight.data.clone())
 
-    def forward(self, z: torch.Tensor):
+    def forward(self, z: torch.Tensor, update_codebook: bool = True):
         # z: (B, D, H, W)
         B, D, H, W = z.shape
         z_flat = z.permute(0, 2, 3, 1).reshape(-1, D)
 
-        # Nearest-code lookup is non-differentiable; keep it (and the EMA
-        # bookkeeping below) out of the autograd graph so no reference to the
-        # encoder's activations is retained past this call.
+        # Nearest-code lookup and EMA bookkeeping must run in float32.
+        # Under torch.amp.autocast, z_flat is float16, and the matmul
+        # z_flat @ embedding.weight.t() also runs in float16. With
+        # VQ_EMBED_DIM=256 the dot-product accumulates 256 terms; even
+        # moderate encoder magnitudes (~16) produce sums near float16.max
+        # (~65504), causing overflow, corrupted indices, and inf commitment
+        # loss. Casting to float32 eliminates that path entirely.
         with torch.no_grad():
-            z_flat_detached = z_flat.detach()
-            dist = (z_flat_detached.pow(2).sum(1, keepdim=True)
-                    + self.embedding.weight.pow(2).sum(1)
-                    - 2 * z_flat_detached @ self.embedding.weight.t())
+            z_flat_fp32 = z_flat.detach().float()
+            w_fp32 = self.embedding.weight.detach().float()
+
+            dist = (z_flat_fp32.pow(2).sum(1, keepdim=True)
+                    + w_fp32.pow(2).sum(1)
+                    - 2 * (z_flat_fp32 @ w_fp32.t()))
 
             indices = dist.argmin(dim=1)
 
-            if self.training:
+            if self.training and update_codebook:
                 encodings = F.one_hot(indices, self.num_embeddings).float()
                 self.ema_cluster_size.mul_(self.decay).add_(
                     encodings.sum(0), alpha=1 - self.decay)
-                embed_sum = encodings.t() @ z_flat_detached
+                # embed_sum must be float32 so it accumulates correctly
+                # into the float32 ema_embed_sum buffer.
+                embed_sum = encodings.t() @ z_flat_fp32
                 self.ema_embed_sum.mul_(self.decay).add_(
                     embed_sum, alpha=1 - self.decay)
 
@@ -344,8 +352,10 @@ class VectorQuantizerEMA(nn.Module):
 
         quantized = self.embedding(indices).view(B, H, W, D).permute(0, 3, 1, 2)
 
+        # Commitment loss in float32 prevents MSE overflow when z_flat is float16.
         commitment_loss = self.commitment_cost * F.mse_loss(
-            z_flat, quantized.permute(0, 2, 3, 1).reshape(-1, D).detach())
+            z_flat.float(),
+            quantized.permute(0, 2, 3, 1).reshape(-1, D).detach().float())
 
         # Straight-through estimator
         quantized_st = z + (quantized - z).detach()
@@ -470,7 +480,7 @@ class VQVAE2(nn.Module):
             n_dead_t = self.vq_top.replace_dead_codes(
                 enc_t.permute(0, 2, 3, 1).reshape(-1, D))
 
-            quant_t, _, _, _ = self.vq_top(enc_t)
+            quant_t, _, _, _ = self.vq_top(enc_t, update_codebook=False)
             dec_t = self.dec_top(quant_t)
             if dec_t.shape[2:] != enc_b.shape[2:]:
                 dec_t = F.interpolate(dec_t, size=enc_b.shape[2:], mode='nearest')
@@ -481,11 +491,11 @@ class VQVAE2(nn.Module):
 
         return n_dead_t, n_dead_b
 
-    def forward(self, x: torch.Tensor) -> Dict:
+    def forward(self, x: torch.Tensor, update_codebook: bool = True) -> Dict:
         enc_b, enc_t = self.encode(x)
 
         # Top level quantization
-        quant_t, loss_t, perp_t, ids_t = self.vq_top(enc_t)
+        quant_t, loss_t, perp_t, ids_t = self.vq_top(enc_t, update_codebook)
 
         # Upsample top codes to bottom resolution
         dec_t = self.dec_top(quant_t)
@@ -494,7 +504,7 @@ class VQVAE2(nn.Module):
 
         # Bottom level quantization (conditioned on top)
         enc_b_combined = self.enc_bottom_combine(torch.cat([enc_b, dec_t], dim=1))
-        quant_b, loss_b, perp_b, ids_b = self.vq_bottom(enc_b_combined)
+        quant_b, loss_b, perp_b, ids_b = self.vq_bottom(enc_b_combined, update_codebook)
 
         # Full decode
         x_recon = self.decoder(torch.cat([quant_b, dec_t], dim=1))
